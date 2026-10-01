@@ -3,28 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ارزون‌جو موتور هوشمند جستجوی ارزان‌ترین قیمت کالاهای بازار ایران.">
-    <title>ارزون‌جو | موتور هوشمند جستجوی ارزان‌ترین کالا</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap">
+    <title>ارزون‌‌جو | موتور هوشمند جستجوی ارزان‌ترین کالا</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header>
         <h1>ارزون‌جو 🚀</h1>
-        <p>موتور هوشمند مقایسه قیمت</p>
+        <p>موتور هوشمند و فوق‌پیشرفته مقایسه قیمت بازار</p>
     </header>
 
     <main class="container">
-        <!-- بخش جستجو -->
         <div class="search-box">
-            <input type="text" id="queryInput" placeholder="نام کالا را وارد کنید (مثلا گوشی سامسونگ)...">
-            <button onclick="searchProducts()">جستجو</button>
+            <input type="text" id="queryInput" placeholder="محصول دلخواهت رو سرچ کن (مثلا گوشی سامسونگ)..." onkeypress="if(event.key === 'Enter') searchProducts()">
+            <button onclick="searchProducts()"><i class="fa-solid fa-magnifying-glass"></i> جستجو</button>
         </div>
 
-        <!-- بخش نمایش نتایج -->
         <div id="resultsContainer" class="products-grid">
-            <p class="guide-text">لطفاً نام کالای مورد نظر خود را جستجو کنید.</p>
+            <p class="guide-text">💡 لطفاً نام کالای مورد نظر خود را برای جستجو در دیجی‌کالا وارد کنید.</p>
         </div>
     </main>
 
@@ -38,7 +35,7 @@
                 return;
             }
 
-            container.innerHTML = '<p class="loading">در حال جستجو در بازار...</p>';
+            container.innerHTML = '<p class="loading"><i class="fa-solid fa-spinner"></i> در حال کاوش و جستجوی هوشمند در بازار...</p>';
 
             try {
                 const response = await fetch('/search', {
@@ -54,7 +51,7 @@
                 if (data.status === 'success') {
                     container.innerHTML = '';
                     if (data.results.length === 0) {
-                        container.innerHTML = '<p>محصولی یافت نشد.</p>';
+                        container.innerHTML = '<p class="guide-text">محصولی با این مشخصات یافت نشد.</p>';
                         return;
                     }
 
@@ -62,19 +59,25 @@
                         const card = document.createElement('div');
                         card.className = 'product-card';
                         card.innerHTML = `
-                            <img src="${item.image}" alt="${item.title}" class="product-img">
+                            <div class="product-img-wrapper">
+                                <img src="${item.image}" alt="${item.title}" class="product-img">
+                            </div>
                             <h3>${item.title}</h3>
-                            <p class="store">فروشگاه: <span>${item.store}</span></p>
-                            <p class="price">وضعیت: <span>${item.price}</span></p>
-                            <a href="${item.link}" target="_blank" class="btn-buy">مشاهده و خرید (افیلیو)</a>
+                            <div class="product-info">
+                                <span class="store">${item.store}</span>
+                                <span class="price">${item.price}</span>
+                            </div>
+                            <a href="${item.link}" target="_blank" class="btn-buy">
+                                <i class="fa-solid fa-cart-shopping"></i> مشاهده و خرید
+                            </a>
                         `;
                         container.appendChild(card);
                     });
                 } else {
-                    container.innerHTML = `<p>خطا: ${data.message}</p>`;
+                    container.innerHTML = `<p class="guide-text">خطا: ${data.message}</p>`;
                 }
             } catch (error) {
-                container.innerHTML = '<p>خطا در برقراری ارتباط با سرور.</p>';
+                container.innerHTML = '<p class="guide-text">خطا در برقراری ارتباط با سرور.</p>';
                 console.error(error);
             }
         }

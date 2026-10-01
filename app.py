@@ -1,86 +1,73 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-GLOBAL_PRODUCTS_DATABASE = [
-    {
-        "id": 1,
-        "name": "Apple iPhone 15 Pro Max",
-        "category": "موبایل",
-        "use_case": "عکاسی حرفه‌ای، گیمینگ، پردازش سنگین",
-        "image": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&auto=format&fit=crop&q=60",
-        "countries": {
-            "USA": {
-                "currency": "$",
-                "currency_name": "دلار",
-                "price_prediction": "📉 پیش‌بینی هوش مصنوعی: نزدیک رویداد بعدی اپل، قیمت حدود ۵۰ دلار کاهش می‌یابد.",
-                "used_price": 950,
-                "stores": [
-                    {"name": "Amazon US", "price": 1199, "shipping": 0, "trusted": True},
-                    {"name": "Best Buy", "price": 1199, "shipping": 15, "trusted": True},
-                    {"name": "eBay (Refurbished)", "price": 999, "shipping": 10, "trusted": True}
-                ]
-            },
-            "UAE": {
-                "currency": "AED",
-                "currency_name": "درهم",
-                "price_prediction": "🔥 فرصت عالی: معافیت مالیاتی فصلی در دبی، بهترین زمان خرید!",
-                "used_price": 3600,
-                "stores": [
-                    {"name": "Amazon AE", "price": 4399, "shipping": 0, "trusted": True},
-                    {"name": "Noon", "price": 4350, "shipping": 20, "trusted": True},
-                    {"name": "Sharaf DG", "price": 4499, "shipping": 0, "trusted": True}
-                ]
-            },
-            "Iran": {
-                "currency": "تومان",
-                "currency_name": "تومان",
-                "price_prediction": "📈 پیش‌بینی هوش مصنوعی: قیمت نوسان محدود دارد؛ خرید در این هفته منطقی است.",
-                "used_price": 62000000,
-                "stores": [
-                    {"name": "دیجی‌کالا", "price": 74500000, "shipping": 60000, "trusted": True},
-                    {"name": "تکنولایف", "price": 73900000, "shipping": 0, "trusted": True},
-                    {"name": "کالایاب", "price": 75000000, "shipping": 0, "trusted": True}
-                ]
-            }
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/search', methods=['POST'])
+def search():
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'status': 'error', 'message': 'عبارت جستجو خالی است'})
+
+    products = []
+    try:
+        # جستجو مستقیماً در دیجی‌کالا (همکاران افیلیو)
+        url = f"https://www.digikala.com/search/?q={query}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-    }
-]
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    search_query = ""
-    selected_country = "Iran"
-    matched_product = None
-    country_data = None
-    ai_advice = ""
-    
-    if request.method == "POST":
-        search_query = request.form.get("query", "").strip()
-        selected_country = request.form.get("country", "Iran").strip()
         
-        if search_query:
-            for prod in GLOBAL_PRODUCTS_DATABASE:
-                if search_query.lower() in prod["name"].lower() or search_query in prod["category"]:
-                    matched_product = prod.copy()
-                    break
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
             
-            if matched_product and selected_country in matched_product["countries"]:
-                country_data = matched_product["countries"][selected_country]
-                for store in country_data["stores"]:
-                    store["total_price"] = store["price"] + store["shipping"]
-                country_data["stores"] = sorted(country_data["stores"], key=lambda x: x["total_price"])
-                for i, store in enumerate(country_data["stores"]):
-                    store["is_cheapest"] = (i == 0)
-                ai_advice = f"تحلیل هوش مصنوعی برای بازار {selected_country}: این کالا برای کاربرد «{matched_product['use_case']}» مناسب است. قیمت مدل دست‌دوم تمیز در این منطقه حدود {format(country_data['used_price'], ',')} {country_data['currency_name']} است."
+            # استخراج کارت محصولات دیجی‌کالا
+            # ساختار کلاس‌های دیجی‌کالا رو برای محصولات پوشش می‌دیم
+            items = soup.select('div.product-card, div[data-product-id]')
+            
+            for item in items[:12]:  # محدود کردن به 12 محصول برتر
+                try:
+                    # پیدا کردن عنوان
+                    title_elem = item.select_text = item.find('h3') or item.select_one('.text-body-1')
+                    title = title_elem.get_text(strip=True) if title_elem else "محصول دیجی‌کالا"
+                    
+                    # پیدا کردن لینک محصول
+                    link_elem = item.find('a', href=True)
+                    raw_link = link_elem['href'] if link_elem else "#"
+                    if raw_link.startswith('/'):
+                        link = f"https://www.digikala.com{raw_link}"
+                    else:
+                        link = raw_link
 
-    return render_template("index.html", 
-                           product=matched_product, 
-                           country_data=country_data, 
-                           query=search_query, 
-                           selected_country=selected_country,
-                           ai_advice=ai_advice)
+                    # پیدا کردن عکس محصول
+                    img_elem = item.find('img')
+                    image = img_elem.get('src') or img_elem.get('data-src') if img_elem else "https://via.placeholder.com/200"
 
-if __name__ == "__main__":
-    app.run(debug=True)
+                    # پیدا کردن قیمت
+                    price_elem = item.select_one('.text-h5, span[data-testid="price"]')
+                    price = price_elem.get_text(strip=True) if price_elem else "تماس بگیرید"
+
+                    products.append({
+                        'title': title,
+                        'store': 'دیجی‌کالا (افیلیو)',
+                        'price': price,
+                        'image': image,
+                        'link': link  # لینک مستقیم بدون پسوند اضافه افیلیو
+                    })
+                except Exception as e:
+                    continue
+
+        return jsonify({'status': 'success', 'results': products})
     
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+if __name__ == '__main__':
+    app.run(debug=True)
