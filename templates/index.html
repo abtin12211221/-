@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">موتور جستجوی ارزان‌ترین کالا | PriceFinder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7928ca;
+            --secondary: #00ffcc;
+            --accent: #ff0055;
+            --bg: #0b091a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(121, 40, 202, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 204, 0.1) 0%, transparent 40%);
+        }
+
+        /* هدر سایت */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 8%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 9, 26, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .lang-select {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .lang-select option {
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+
+        /* بخش هیرو و جستجوی کالا */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 160px 20px 60px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--secondary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 15px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(45deg, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            max-width: 700px;
+        }
+
+        /* کادر جستجوی کالا توسط مشتری */
+        .search-box-container {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .search-box-container input {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 12px 15px;
+            color: var(--text);
+            font-size: 16px;
+            outline: none;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        .search-box-container button {
+            background: linear-gradient(45deg, var(--secondary), #0072ff);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
+            transition: 0.3s;
+        }
+
+        .search-box-container button:hover {
+            transform: scale(1.05);
+        }
+
+        /* بخش نمایش نتایج ارزان‌ترین کالاها */
+        .section {
+            padding: 40px 8% 80px 8%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .item-info h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .item-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .item-price-tag {
+            text-align: left;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .buy-link {
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            color: white;
+            padding: 8px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+            display: inline-block;
+        }
+
+        /* فوتر */
+        footer {
+            text-align: center;
+            padding: 30px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- هدر سایت -->
+    <header>
+        <div class="logo">⚡ PriceFinder</div>
+        <div class="nav-right">
+            <!-- منوی کامل زبان‌ها -->
+            <select class="lang-select" id="langSwitcher" onchange="changeLanguage(this.value)">
+                <option value="fa">فارسی (Persian)</option>
+                <option value="en">English (انگلیسی)</option>
+                <option value="es">Español (اسپانیایی)</option>
+                <option value="fr">Français (فرانسوی)</option>
+                <option value="de">Deutsch (آلمانی)</option>
+                <option value="zh">中文 (چینی)</option>
+                <option value="ar">العربية (عربی)</option>
+                <option value="ru">Русский (روسی)</option>
+                <option value="ja">日本語 (ژاپنی)</option>
+                <option value="tr">Türkçe (ترکی)</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- بخش اصلی جستجوی کالا توسط مشتری -->
+    <section class="hero">
+        <div class="badge" id="badge-text">🔍 سیستم هوشمند پیداکردن ارزان‌ترین قیمت</div>
+        <h1 id="hero-title">اسم کالای دلخواهت رو بنویس، <span>ارزان‌ترینش رو پیدا کن!</span></h1>
+        <p id="hero-desc">ما فروشنده نیستیم؛ ما بهت کمک می‌کنیم تا ارزان‌ترین فروشگاه یا مرجع برای کالایی که می‌خوای رو پیدا کنی.</p>
+        
+        <!-- کادر جستجوی مشتری -->
+        <div class="search-box-container">
+            <input type="text" id="searchInput" placeholder="مثلاً: دسته پلی استیشن ۵، هدست گیمینگ، پایتون...">
+            <button onclick="searchItem()" id="searchBtn">جستجو 🚀</button>
+        </div>
+    </section>
+
+    <!-- نتایج جستجو -->
+    <section class="section" id="resultsSection" style="display: none;">
+        <h2 id="resultsTitle" style="font-size: 22px; font-weight: 900; margin-bottom: 10px;">نتایج جستجو برای ارزان‌ترین قیمت:</h2>
+        <div class="results-grid" id="resultsContainer"></div>
+    </section>
+
+    <!-- فوتر -->
+    <footer>
+        <p id="footer-text">پلتفرم مستقل مقایسه و جستجوی قیمت ⚡</p>
+    </footer>
+
+    <script>
+        const translations = {
+            fa: {
+                title: "موتور جستجوی ارزان‌ترین کالا | PriceFinder",
+                badge: "🔍 سیستم هوشمند پیداکردن ارزان‌ترین قیمت",
+                heroTitle: "اسم کالای دلخواهت رو بنویس، <span>ارزان‌ترینش رو پیدا کن!</span>",
+                heroDesc: "ما فروشنده نیستیم؛ ما بهت کمک می‌کنیم تا ارزان‌ترین فروشگاه یا مرجع برای کالایی که می‌خوای رو پیدا کنی.",
+                searchPlaceholder: "مثلاً: دسته پلی استیشن ۵، هدست گیمینگ...",
+                searchBtn: "جستجو 🚀",
+                resTitle: "بهترین و ارزان‌ترین قیمت‌های پیدا شده:",
+                buyText: "مشاهده و خرید",
+                footer: "پلتفرم مستقل مقایسه و جستجوی قیمت ⚡"
+            },
+            en: {
+                title: "Cheapest Item Finder | PriceFinder",
+                badge: "🔍 Smart Lowest Price Finder System",
+                heroTitle: "Type the item name, <span>find the cheapest price!</span>",
+                heroDesc: "We are not a store; we help you find the lowest price and best deals across the web.",
+                searchPlaceholder: "e.g., PS5 controller, gaming headset...",
+                searchBtn: "Search 🚀",
+                resTitle: "Best & Cheapest Prices Found:",
+                buyText: "View & Buy",
+                footer: "Independent Price Comparison Platform ⚡"
+            },
+            es: {
+                title: "Buscador de Artículos Baratos | PriceFinder",
+                badge: "🔍 Sistema Inteligente de Precios Bajos",
+                heroTitle: "Escribe el nombre del artículo, <span>¡encuentra el más barato!</span>",
+                heroDesc: "No somos una tienda; te ayudamos a encontrar el precio más bajo en la web.",
+                searchPlaceholder: "ej., control PS5, auriculares...",
+                searchBtn: "Buscar 🚀",
+                resTitle: "Mejores precios encontrados:",
+                buyText: "Ver y Comprar",
+                footer: "Plataforma independiente de comparación de precios ⚡"
+            },
+            fr: {
+                title: "Trouveur d'Articles Moins Chers | PriceFinder",
+                badge: "🔍 Système Intelligent de Recherche de Prix",
+                heroTitle: "Tapez le nom de l'article, <span>trouvez le moins cher !</span>",
+                heroDesc: "Nous ne sommes pas un magasin ; nous vous aidons à trouver les meilleurs prix.",
+                searchPlaceholder: "ex. manette PS5, casque...",
+                searchBtn: "Chercher 🚀",
+                resTitle: "Meilleurs prix trouvés :",
+                buyText: "Voir et Acheter",
+                footer: "Plateforme indépendante de comparaison ⚡"
+            },
+            de: {
+                title: "Günstigster Artikel Finder | PriceFinder",
+                badge: "🔍 Intelligentes Niedrigpreissystem",
+                heroTitle: "Artikelnamen eingeben, <span>günstigsten Preis finden!</span>",
+                heroDesc: "Wir sind kein Shop; wir helfen dir, die niedrigsten Preise im Web zu finden.",
+                searchPlaceholder: "z.B. PS5 Controller, Gaming Headset...",
+                searchBtn: "Suchen 🚀",
+                resTitle: "Gefundene Bestpreise:",
+                buyText: "Ansehen & Kaufen",
+                footer: "Unabhängige Preisvergleichsplattform ⚡"
+            },
+            zh: {
+                title: "最便宜商品查找器 | PriceFinder",
+                badge: "🔍 智能最低价查找系统",
+                heroTitle: "输入商品名称，<span>寻找最低价格！</span>",
+                heroDesc: "我们不是商店；我们帮您在全网找到最低的价格和优惠。",
+                searchPlaceholder: "例如：PS5手柄，游戏耳机...",
+                searchBtn: "搜索 🚀",
+                resTitle: "找到的最佳和最便宜价格：",
+                buyText: "查看并购买",
+                footer: "独立价格比较平台 ⚡"
+            },
+            ar: {
+                title: "محرك بحث أرخص السلع | PriceFinder",
+                badge: "🔍 نظام ذكي للبحث عن أرخص الأسعار",
+                heroTitle: "اكتب اسم السلعة التي تريدها، <span>واعثر على أرخص سعر!</span>",
+                heroDesc: "نحن لسنا متجراً؛ نحن نساعدك في العثور على أقل الأسعار عبر الويب.",
+                searchPlaceholder: "مثال: وحدة تحكم بلايستيشن 5، سماعة...",
+                searchBtn: "بحث 🚀",
+                resTitle: "أفضل وأرخص الأسعار التي تم العثور عليها:",
+                buyText: "عرض وشراء",
+                footer: "منصة مستقلة لمقارنة الأسعار ⚡"
+            },
+            ru: {
+                title: "Поиск дешевых товаров | PriceFinder",
+                badge: "🔍 Умная система поиска низких цен",
+                heroTitle: "Введите название товара, <span>найдите самую низкую цену!</span>",
+                heroDesc: "Мы не магазин; мы помогаем найти лучшие цены в интернете.",
+                searchPlaceholder: "напр., геймпад PS5, наушники...",
+                searchBtn: "Поиск 🚀",
+                resTitle: "Найденные лучшие цены:",
+                buyText: "Смотреть и купить",
+                footer: "Независимая платформа сравнения цен ⚡"
+            },
+            ja: {
+                title: "最安値ファインダー | PriceFinder",
+                badge: "🔍 スマート最安値検索システム",
+                heroTitle: "商品の名前を入力して、<span>最安値を見つけよう！</span>",
+                heroDesc: "私たちはショップではありません。ウェブ上の最安値を見つけるお手伝いをします。",
+                searchPlaceholder: "例：PS5コントローラー、ゲーミングヘッドセット...",
+                searchBtn: "検索 🚀",
+                resTitle: "見つかった最安値：",
+                buyText: "見る・買う",
+                footer: "独立型価格比較プラットフォーム ⚡"
+            },
+            tr: {
+                title: "En Ucuz Ürün Bulucu | PriceFinder",
+                badge: "🔍 Akıllı En Düşük Fiyat Bulma Sistemi",
+                heroTitle: "İstediğin ürünün adını yaz, <span>en ucuzunu bul!</span>",
+                heroDesc: "Biz bir mağaza değiliz; webdeki en düşük fiyatı bulmana yardımcı oluyoruz.",
+                searchPlaceholder: "örn. PS5 kolu, oyuncu kulaklığı...",
+                searchBtn: "Ara 🚀",
+                resTitle: "Bulunan En İyi ve En Ucuz Fiyatlar:",
+                buyText: "İncele ve Satın Al",
+                footer: "Bağımsız Fiyat Karşılaştırma Platformu ⚡"
+            }
+        };
+
+        function changeLanguage(lang) {
+            const t = translations[lang];
+            if (!t) return;
+
+            const htmlRoot = document.getElementById('html-root');
+            if (lang === 'fa' || lang === 'ar') {
+                htmlRoot.setAttribute('dir', 'rtl');
+            } else {
+                htmlRoot.setAttribute('dir', 'ltr');
+            }
+
+            document.getElementById('page-title').innerText = t.title;
+            document.getElementById('badge-text').innerText = t.badge;
+            document.getElementById('hero-title').innerHTML = t.heroTitle;
+            document.getElementById('hero-desc').innerText = t.heroDesc;
+            document.getElementById('searchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('searchBtn').innerText = t.searchBtn;
+            document.getElementById('resultsTitle').innerText = t.resTitle;
+            document.getElementById('footer-text').innerText = t.footer;
+        }
+
+        function searchItem() {
+            const query = document.getElementById('searchInput').value.trim();
+            if(!query) {
+                alert('لطفاً نام کالا را وارد کنید!');
+                return;
+            }
+
+            const resultsSection = document.getElementById('resultsSection');
+            const container = document.getElementById('resultsContainer');
+            
+            resultsSection.style.display = 'block';
+
+            // شبیه‌سازی نتایج جستجوی ارزان‌ترین قیمت برای کالای وارد شده توسط کاربر
+            container.innerHTML = `
+                <div class="result-card">
+                    <div class="item-info">
+                        <h3>${query} (نسخه اقتصادی و مرجع اصلی)</h3>
+                        <p>فروشگاه آنلاین برتر • ضمانت اصالت کالا و ارسال سریع</p>
+                    </div>
+                    <div class="item-price-tag">
+                        <div class="price">۱,۴۵۰,۰۰۰ تومان</div>
+                        <a href="#" class="buy-link">مشاهده و خرید ارزان</a>
+                    </div>
+                </div>
+                <div class="result-card">
+                    <div class="item-info">
+                        <h3>${query} (فروشگاه همکار و تخفیف‌دار)</h3>
+                        <p>تخفیف ویژه جشنواره • موجود در انبار مرکزی</p>
+                    </div>
+                    <div class="item-price-tag">
+                        <div class="price" style="color: #00ffcc;">۱,۳۹۰,۰۰۰ تومان (ارزان‌ترین!)</div>
+                        <a href="#" class="buy-link">مشاهده و خرید ارزان</a>
+                    </div>
+                </div>
+            `;
+            
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
