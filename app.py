@@ -17,24 +17,37 @@ def search():
     
     q_lower = query.lower()
     
-    # تشخیص کلمات بی‌معنی و درهم‌برهم (اگر کلمات فارسی حروف صدادار اصلی مثل آ، ا، و، ی را نداشته باشند یا خیلی عجیب باشند)
+    # ۱. لیست سیاه کامل کلمات رکیک، ناسزا و توهین‌آمیز (برای جلوگیری از دور زدن فیلتر با حروف صدادار)
+    bad_words = [
+        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'پاره', 'لاشی', 'Hess', 
+        'كس', 'کص', 'کصکش', 'کسکش', 'داش', 'مادر', 'پدرصد', 'پدرصلواتی', 
+        'بیگانه', 'اغشخ', 'سگ', 'خر', 'نفهم', 'احمق'
+    ]
+    
+    # حذف فاصله و نیم‌فاصله برای چک کردن دقیق‌تر ناسزاها (مثلاً اگر بین کلمات فاصله گذاشتند)
+    q_clean = q_lower.replace(' ', '').replace('‌', '')
+    for bw in bad_words:
+        bw_clean = bw.replace(' ', '').replace('‌', '')
+        if bw_clean in q_clean or bw in q_lower:
+            return jsonify({'status': 'success', 'results': []})
+
+    # ۲. تشخیص کلمات بی‌معنی و درهم‌برهم (تست کیبورد و حروف بی‌‌رابطه)
     words = q_lower.split()
     for w in words:
-        # اگر کلمه انگلیسی یا فارسی طولانی باشد و هیچ حرف صداداری نداشته باشد (مثل چرت و پرت‌های کیبورد)
         if len(w) > 4:
-            vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ']
+            vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ', 'ء', 'ة', 'ه']
             vowels_en = ['a', 'e', 'i', 'o', 'u']
             has_vowel_fa = any(v in w for v in vowels_fa)
             has_vowel_en = any(v in w for v in vowels_en)
             if not has_vowel_fa and not has_vowel_en:
                 return jsonify({'status': 'success', 'results': []})
         
-        # تکرار بیش از حد یک حرف پشت سر هم
+        # تکرار بیش از حد یک حرف پشت سر هم (مثل ققق یا بفققبائی)
         if re.search(r'(.)\1{2,}', w):
             return jsonify({'status': 'success', 'results': []})
 
-    # لیست کلمات نامعتبر دستی
-    invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123', 'خر', 'اغشخ']
+    # ۳. لیست کلمات نامعتبر تستی و انگلیسی تصادفی
+    invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123']
     if any(p == q_lower or p in words for p in invalid_patterns):
         return jsonify({'status': 'success', 'results': []})
 
@@ -51,7 +64,7 @@ def search():
         img2 = 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&auto=format&fit=crop&q=80'
         img3 = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&auto=format&fit=crop&q=80'
         p1, p2, p3 = '۲۴,۲۰۰,۰۰۰ تومان', '۲۶,۵۰۰,۰۰۰ تومان', '۲۳,۹۰۰,۰۰۰ تومان'
-    elif any(k in q_lower for k in ['کیس', 'کامپیوتر', 'گیمینگ', 'gaming', 'گیم', 'رتی‌اکس', 'rtx', 'گرافیک']):
+    elif any(k in q_lower for k in ['کیس', 'کامپیوتر', 'گیمینگ', 'gaming', 'گیم', 'رتی‌اکس', 'rtx', 'گرافیک', 'مادربرد']):
         img1 = 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500&auto=format&fit=crop&q=80'
         img2 = 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500&auto=format&fit=crop&q=80'
         img3 = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&auto=format&fit=crop&q=80'
