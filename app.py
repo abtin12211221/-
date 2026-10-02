@@ -17,22 +17,28 @@ def search():
     
     q_lower = query.lower()
     
-    # ۱. لیست سیاه کامل کلمات رکیک، ناسزا و توهین‌آمیز (برای جلوگیری از دور زدن فیلتر با حروف صدادار)
+    # ۱. لیست سیاه سخت‌گیرانه برای کلمات رکیک (حتی کلمات کوتاه تک‌بخشی)
     bad_words = [
-        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'پاره', 'لاشی', 'Hess', 
-        'كس', 'کص', 'کصکش', 'کسکش', 'داش', 'مادر', 'پدرصد', 'پدرصلواتی', 
-        'بیگانه', 'اغشخ', 'سگ', 'خر', 'نفهم', 'احمق'
+        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'پاره', 'لاشی', 
+        'كس', 'کص', 'کصکش', 'کسکش', 'کس', 'کص', 'دس', 'داش', 'سگ', 'خر'
     ]
     
-    # حذف فاصله و نیم‌فاصله برای چک کردن دقیق‌تر ناسزاها (مثلاً اگر بین کلمات فاصله گذاشتند)
-    q_clean = q_lower.replace(' ', '').replace('‌', '')
-    for bw in bad_words:
-        bw_clean = bw.replace(' ', '').replace('‌', '')
-        if bw_clean in q_clean or bw in q_lower:
+    # تفکیک کلمات ورودی برای بررسی دقیق هر کلمه جداگانه
+    words = q_lower.split()
+    for w in words:
+        w_clean = w.replace('‌‌', '').strip()
+        if w_clean in bad_words or any(bw in w_clean for bw in bad_words if len(bw) > 2):
             return jsonify({'status': 'success', 'results': []})
 
-    # ۲. تشخیص کلمات بی‌معنی و درهم‌برهم (تست کیبورد و حروف بی‌‌رابطه)
-    words = q_lower.split()
+    # بررسی کلی متن بدون فاصله برای ناسزاهای سرهم‌شده
+    q_clean_all = q_lower.replace(' ', '').replace('‌', '')
+    for bw in bad_words:
+        if len(bw) <= 3 and bw in q_clean_all:
+            return jsonify({'status': 'success', 'results': []})
+        if bw.replace(' ', '') in q_clean_all:
+            return jsonify({'status': 'success', 'results': []})
+
+    # ۲. تشخیص کلمات بی‌معنی و درهم‌برهم (تست کیبورد و حروف بی‌رابطه)
     for w in words:
         if len(w) > 4:
             vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ', 'ء', 'ة', 'ه']
@@ -42,7 +48,7 @@ def search():
             if not has_vowel_fa and not has_vowel_en:
                 return jsonify({'status': 'success', 'results': []})
         
-        # تکرار بیش از حد یک حرف پشت سر هم (مثل ققق یا بفققبائی)
+        # تکرار بیش از حد یک حرف پشت سر هم
         if re.search(r'(.)\1{2,}', w):
             return jsonify({'status': 'success', 'results': []})
 
