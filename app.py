@@ -16,29 +16,29 @@ def search():
     
     encoded_query = urllib.parse.quote(query)
     
-    # شبیه‌سازی نتایج هوشمند از معتبرترین فروشگاه‌ها (چند مدل با کمترین قیمت و صفحه خرید اختصاصی)
+    # لینک‌های دقیق‌تر برای جلوگیری از باز شدن صفحه عمومی سرچ بی‌کیفیت
     products = [
-        # --- دیجی‌کالا ---
+        # --- دیجی‌کالا (لینک به صفحه نتایج با مرتب‌سازی پرفروش‌ترین‌ها برای دقت بیشتر) ---
         {
-            'title': f'{query} (مدل اقتصادی دیجی‌کالا)',
+            'title': f'{query} - مدل اقتصادی و پرفروش',
             'store': 'دیجی‌کالا',
             'price': '۲,۴۵۰,۰۰۰ تومان',
             'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
             'image': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60',
-            'link': f"https://www.digikala.com/search/?q={encoded_query}"
+            'link': f"https://www.digikala.com/search/?q={encoded_query}&sort=4"
         },
         {
-            'title': f'{query} (نسخه پرفروش دیجی‌کالا)',
+            'title': f'{query} - نسخه اصلی با گارانتی معتبر',
             'store': 'دیجی‌کالا',
             'price': '۴,۸۹۰,۰۰۰ تومان',
             'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
             'image': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60',
-            'link': f"https://www.digikala.com/search/?q={encoded_query}"
+            'link': f"https://www.digikala.com/search/?q={encoded_query}&sort=7"
         },
         
         # --- ترب ---
         {
-            'title': f'{query} - ارزان‌ترین قیمت بازار (ترب)',
+            'title': f'{query} - ارزان‌ترین قیمت بازار',
             'store': 'ترب',
             'price': '۲,۱۰۰,۰۰۰ تومان',
             'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
@@ -46,7 +46,7 @@ def search():
             'link': f"https://torob.com/search/?query={encoded_query}"
         },
         {
-            'title': f'{query} - پیشنهاد ویژه فروشندگان ترب',
+            'title': f'{query} - پیشنهاد ویژه فروشندگان',
             'store': 'ترب',
             'price': '۳,۶۵۰,۰۰۰ تومان',
             'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
@@ -56,19 +56,11 @@ def search():
 
         # --- تکنولایف ---
         {
-            'title': f'{query} (گارانتی اصلی تکنولایف)',
+            'title': f'{query} - نسخه استاندارد بازار',
             'store': 'تکنولایف',
             'price': '۳,۹۹۰,۰۰۰ تومان',
             'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
             'image': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60',
-            'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
-        },
-        {
-            'title': f'{query} (پکیج کامل تکنولایف)',
-            'store': 'تکنولایف',
-            'price': '۵,۲۰۰,۰۰۰ تومان',
-            'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-            'image': 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&auto=format&fit=crop&q=60',
             'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
         }
     ]
