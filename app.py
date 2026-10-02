@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import urllib.parse
 import re
-import random
 
 app = Flask(__name__)
 
@@ -18,17 +17,22 @@ def search():
     
     q_lower = query.lower()
     
-    # فیلتر هوشمند کلمات نامعتبر
-    invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123']
-    if any(p in q_lower for p in invalid_patterns):
+    # ۱. فیلتر هوشمند تکرار بیش از حد یک حرف پشت سر هم (مثل بفققبائی یا ققق)
+    if re.search(r'(.)\1{2,}', q_lower):
         return jsonify({'status': 'success', 'results': []})
     
+    # ۲. لیست کلمات نامعتبر یا توهین‌آمیز رایج
+    invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123', 'خر', 'اغشخ']
+    if any(p == q_lower or p in q_lower.split() for p in invalid_patterns):
+        return jsonify({'status': 'success', 'results': []})
+    
+    # ۳. تشخیص کاراکترها و حروف تصادفی بی‌معنی انگلیسی
     if re.search(r'^[bcdfghjklmnpqrstvwxyz]{5,}$', q_lower) or (re.search(r'^[a-z]{8,}$', q_lower) and not any(v in q_lower for v in ['a', 'e', 'i', 'o', 'u'])):
         return jsonify({'status': 'success', 'results': []})
 
     encoded_query = urllib.parse.quote(query)
     
-    # تعیین عکس‌ها و بازه‌های قیمت خفن‌تر و متغیر برای هر فروشگاه
+    # تعیین عکس‌ها و بازه‌های قیمت منطقی بر اساس نوع کالا
     if any(k in q_lower for k in ['لپ‌تاپ', 'لپتاپ', 'laptop', 'asus', 'acer', 'macbook', 'lenovo']):
         img1 = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&auto=format&fit=crop&q=80'
         img2 = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&auto=format&fit=crop&q=80'
