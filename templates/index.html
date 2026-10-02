@@ -20,19 +20,19 @@
     <!-- هدر سایت -->
     <header class="w-full max-w-5xl mx-auto px-4 pt-12 pb-6 text-center">
         <div class="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 px-4 py-1.5 rounded-full text-purple-400 text-xs font-semibold mb-4 shadow-sm">
-            🔥 مرجع تخصصی مقایسه قیمت و پیشنهاد خرید مستقیم
+            🔥 جستجوی هوشمند قیمت و پیشنهادهای ویژه خرید
         </div>
         <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-4">
             ارزون<span class="text-purple-500">جو</span>
         </h1>
         <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-            کالای خود را جستجو کنید تا ارزان‌ترین قیمت‌ها از معتبرترین فروشگاه‌ها نمایش داده شود.
+            کالای خود را جستجو کنید یا از دسته‌بندی‌های زیر انتخاب کنید تا بهترین قیمت‌های بازار نمایش داده شود.
         </p>
 
         <!-- کادر جستجو -->
         <div class="mt-8 max-w-2xl mx-auto glass-panel p-2.5 rounded-2xl shadow-2xl flex items-center gap-3 transition focus-within:border-purple-500">
             <span class="text-xl px-2 text-purple-400">🔍</span>
-            <input type="text" id="queryInput" placeholder="نام محصول (مثلاً: لوازم گیمینگ، گوشی سامسونگ، لپ‌تاپ)..." 
+            <input type="text" id="queryInput" placeholder="نام محصول (مثلاً: کارت گرافیک، گوشی سامسونگ، لپ‌تاپ)..." 
                    class="flex-1 bg-transparent border-none text-slate-100 placeholder-slate-500 px-2 py-3 focus:outline-none text-sm md:text-base">
             <button onclick="performSearch()" id="searchBtn" 
                     class="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3.5 rounded-xl font-medium transition shadow-lg shadow-purple-600/30 text-sm md:text-base flex items-center gap-2">
@@ -42,16 +42,16 @@
 
         <!-- دکمه‌های دسته‌بندی سریع (پیشنهادهای داغ) -->
         <div class="flex flex-wrap justify-center gap-2.5 mt-6">
-            <button onclick="quickSearch('لوازم گیمینگ ارزان')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
+            <button onclick="quickSearch('تجهیزات گیمینگ')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
                 🎮 تجهیزات گیمینگ
             </button>
-            <button onclick="quickSearch('گوشی موبایل پرفروش')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
+            <button onclick="quickSearch('گوشی موبایل')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
                 📱 موبایل و تبلت
             </button>
-            <button onclick="quickSearch('لپ‌تاپ دانشجویی')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
+            <button onclick="quickSearch('لپ‌تاپ')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
                 💻 لپ‌تاپ و کامپیوتر
             </button>
-            <button onclick="quickSearch('ساعت هوشمند ارزان')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
+            <button onclick="quickSearch('ساعت هوشمند')" class="bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
                 ⌚ ساعت هوشمند
             </button>
         </div>
