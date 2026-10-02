@@ -28,7 +28,7 @@ def search():
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
         }
         
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=8)
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -51,13 +51,13 @@ def search():
                     link = f"https://www.digikala.com{raw_link}" if raw_link.startswith('/') else raw_link
 
                     title_elem = item.find('h3') or item.find('h4') or item.select_one('div[data-testid="title"]')
-                    title = title_elem.get_text(strip=True) if title_elem else f"محصول مرتبط با {query}"
+                    title = title_elem.get_text(strip=True) if title_elem else f"محصول {query}"
 
                     img_elem = item.find('img')
                     image = img_elem.get('src') or img_elem.get('data-src') if img_elem else "https://via.placeholder.com/200"
 
                     price_elem = item.select_one('span[data-testid="price"]') or item.find(string=lambda t: t and 'تومان' in t)
-                    price = price_elem.get_text(strip=True) if hasattr(price_elem, 'get_text') else "مشاهده قیمت در سایت"
+                    price = price_elem.get_text(strip=True) if hasattr(price_elem, 'get_text') else "مشاهده قیمت"
 
                     if not any(p['link'] == link for p in products):
                         products.append({
@@ -70,27 +70,26 @@ def search():
                 except Exception:
                     continue
 
-        # اگر به هر دلیلی اسکرپر محصولی پیدا نکرد، برای جلوگیری از ارور، صفحه جستجوی مستقیم دیجی‌کالا رو برمی‌گردونه
         if not products:
+            fallback_url = f"https://www.digikala.com/search/?q={encoded_query}"
             products.append({
                 'title': f'نتایج جستجوی "{query}" در دیجی‌کالا',
                 'store': 'دیجی‌کالا',
-                'price': 'کلیک کنید',
+                'price': 'کلیک برای مشاهده',
                 'image': 'https://via.placeholder.com/200',
-                'link': url
+                'link': fallback_url
             })
 
         return jsonify({'status': 'success', 'results': products})
     
-    except Exception as e:
-        # حتی در صورت بروز خطای سرور هم لینک مستقیم رو به کاربر میدیم تا کارش راه بیفته
+    except Exception:
         fallback_url = f"https://www.digikala.com/search/?q={urllib.parse.quote(query)}"
         return jsonify({
             'status': 'success', 
             'results': [{
-                'title': f'مشاهده نتایج جستجوی "{query}" در دیجی‌کالا',
-                'store': 'دیجی‌کالا',
-                'price': 'مشاهده',
+                'title': f'مشاهده نتایج "{query}" در دیجی‌کالا',
+                'store': 'دیجی‌‌کالا',
+                'price': 'مشاهده در سایت',
                 'image': 'https://via.placeholder.com/200',
                 'link': fallback_url
             }]
