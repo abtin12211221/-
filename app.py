@@ -17,38 +17,36 @@ def search():
     
     q_lower = query.lower()
     
-    # ۱. لیست سیاه سخت‌گیرانه برای کلمات رکیک (حتی کلمات کوتاه تک‌بخشی)
+    # ۱. لیست سیاه جامع و کامل شامل تمام فحش‌ها و رکیک‌ترین کلمات فارسی
     bad_words = [
-        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'پاره', 'لاشی', 
-        'كس', 'کص', 'کصکش', 'کسکش', 'کس', 'کص', 'دس', 'داش', 'سگ', 'خر'
+        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'کون', 'پاره', 'لاشی', 
+        'كس', 'کص', 'کصکش', 'کسکش', 'کس', 'کص', 'دس', 'داش', 'سگ', 'خر',
+        'جندع', 'کصده', 'کسده', 'لاشخور', 'جنده', 'منگل', 'امل', 'اغشخ'
     ]
     
-    # تفکیک کلمات ورودی برای بررسی دقیق هر کلمه جداگانه
+    # پاکسازی متن از تمام فاصله‌ها و کاراکترهای اضافی برای مقایسه دقیق
+    q_clean_all = q_lower.replace(' ', '').replace('‌', '').replace('_', '').replace('-', '')
+    
+    # بررسی اینکه آیا کلمه یا فحشی داخل عبارت سرچ شده وجود دارد یا خیر
+    for bw in bad_words:
+        bw_clean = bw.replace(' ', '').replace('‌', '')
+        if bw_clean in q_clean_all or bw in q_lower:
+            return jsonify({'status': 'success', 'results': []})
+
+    # تفکیک کلمات برای بررسی دقیق‌تر تک‌تک کلمات ورودی
     words = q_lower.split()
     for w in words:
-        w_clean = w.replace('‌‌', '').strip()
-        if w_clean in bad_words or any(bw in w_clean for bw in bad_words if len(bw) > 2):
+        w_clean = w.replace('‌', '').strip()
+        if w_clean in bad_words:
             return jsonify({'status': 'success', 'results': []})
-
-    # بررسی کلی متن بدون فاصله برای ناسزاهای سرهم‌شده
-    q_clean_all = q_lower.replace(' ', '').replace('‌', '')
-    for bw in bad_words:
-        if len(bw) <= 3 and bw in q_clean_all:
+            
+        # ۲. فیلتر هوشمند کلمات درهم‌برهم و رندوم (کیبوردکوبی طولانی)
+        vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ', 'ء', 'ه']
+        vowel_count = sum(1 for char in w if char in vowels_fa)
+        if len(w) >= 5 and vowel_count == 0:
             return jsonify({'status': 'success', 'results': []})
-        if bw.replace(' ', '') in q_clean_all:
-            return jsonify({'status': 'success', 'results': []})
-
-    # ۲. تشخیص کلمات بی‌معنی و درهم‌برهم (تست کیبورد و حروف بی‌رابطه)
-    for w in words:
-        if len(w) > 4:
-            vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ', 'ء', 'ة', 'ه']
-            vowels_en = ['a', 'e', 'i', 'o', 'u']
-            has_vowel_fa = any(v in w for v in vowels_fa)
-            has_vowel_en = any(v in w for v in vowels_en)
-            if not has_vowel_fa and not has_vowel_en:
-                return jsonify({'status': 'success', 'results': []})
-        
-        # تکرار بیش از حد یک حرف پشت سر هم
+            
+        # تکرار بیش از حد یک حرف پشت سر هم (مثل ققق یا سسس)
         if re.search(r'(.)\1{2,}', w):
             return jsonify({'status': 'success', 'results': []})
 
