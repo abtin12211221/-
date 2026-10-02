@@ -16,46 +16,58 @@ def search():
     
     encoded_query = urllib.parse.quote(query)
     
-    # لیست کامل فروشگاه‌ها با اطلاعات هماهنگ برای نمایش به صورت کارت‌های شیک
-    products = [
+    # لیست پیشرفته معتبرترین فروشگاه‌ها با لینک‌های مستقیم و اطلاعات جامع
+    stores_data = [
         {
-            'title': f'جستجوی "{query}" در دیجی‌کالا',
-            'store': 'دیجی‌کالا',
-            'price': 'مشاهده قیمت روز و خرید',
-            'image': 'https://www.digikala.com/statics/img/svg/digikala.svg',
-            'link': f"https://www.digikala.com/search/?q={encoded_query}"
+            'name': 'دیجی‌کالا',
+            'category': 'بزرگترین فروشگاه آنلاین ایران',
+            'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
+            'url': f"https://www.digikala.com/search/?q={encoded_query}",
+            'logo': '🛒'
         },
         {
-            'title': f'مقایسه قیمت "{query}" در ترب',
-            'store': 'ترب',
-            'price': 'مقایسه فروشندگان بازار',
-            'image': 'https://torob.com/static/images/torob_logo.svg',
-            'link': f"https://torob.com/search/?query={encoded_query}"
+            'name': 'ترب',
+            'category': 'موتور مقایسه قیمت بازار',
+            'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+            'url': f"https://torob.com/search/?query={encoded_query}",
+            'logo': '⚖️'
         },
         {
-            'title': f'بررسی و قیمت "{query}" در ایمالز',
-            'store': 'ایمالز',
-            'price': 'مشاهده لیست فروشندگان',
-            'image': 'https://emalls.ir/Content/Design/images/emalls-logo.png',
-            'link': f"https://emalls.ir/مشخصات_{encoded_query}"
+            'name': 'ایمالز',
+            'category': 'مرجع قیمت‌گذاری فروشندگان',
+            'badge_color': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+            'url': f"https://emalls.ir/مشخصات_{encoded_query}",
+            'logo': '📊'
         },
         {
-            'title': f'خرید "{query}" از تکنولایف',
-            'store': 'تکنولایف',
-            'price': 'بررسی تخصصی و خرید',
-            'image': 'https://www.technolife.ir/image/static/technolife-logo.svg',
-            'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
+            'name': 'تکنولایف',
+            'category': 'متخصص کالای دیجیتال و موبایل',
+            'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            'url': f"https://www.technolife.ir/product/list?search={encoded_query}",
+            'logo': '📱'
         },
         {
-            'title': f'خرید "{query}" از باسلام',
-            'store': 'باسلام',
-            'price': 'مشاهده محصولات بازار اجتماعی',
-            'image': 'https://basalam.com/images/basalam-logo.png',
-            'link': f"https://basalam.com/search?q={encoded_query}"
+            'name': 'باسلام',
+            'category': 'بازار اجتماعی و محصولات سنتی',
+            'badge_color': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+            'url': f"https://basalam.com/search?q={encoded_query}",
+            'logo': '🧶'
         }
     ]
 
-    return jsonify({'status': 'success', 'results': products})
+    results = []
+    for store in stores_data:
+        results.append({
+            'title': f'نتایج جستجوی "{query}" در {store["name"]}',
+            'store': store['name'],
+            'category': store['category'],
+            'badge_color': store['badge_color'],
+            'logo': store['logo'],
+            'price_text': 'بررسی قیمت لحظه‌ای و خرید',
+            'link': store['url']
+        })
+
+    return jsonify({'status': 'success', 'results': results})
 
 if __name__ == '__main__':
     app.run(debug=True)
