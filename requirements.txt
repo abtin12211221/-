@@ -1,5 +1,4 @@
-Flask
-gunicorn
-flask-talisman
-beautifulsoup4
-requests
+Flask==3.0.2
+requests==2.31.0
+beautifulsoup4==4.12.3
+gunicorn==21.2.0
