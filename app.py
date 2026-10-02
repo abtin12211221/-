@@ -17,17 +17,25 @@ def search():
     
     q_lower = query.lower()
     
-    # ۱. فیلتر هوشمند تکرار بیش از حد یک حرف پشت سر هم (مثل بفققبائی یا ققق)
-    if re.search(r'(.)\1{2,}', q_lower):
-        return jsonify({'status': 'success', 'results': []})
-    
-    # ۲. لیست کلمات نامعتبر یا توهین‌آمیز رایج
+    # تشخیص کلمات بی‌معنی و درهم‌برهم (اگر کلمات فارسی حروف صدادار اصلی مثل آ، ا، و، ی را نداشته باشند یا خیلی عجیب باشند)
+    words = q_lower.split()
+    for w in words:
+        # اگر کلمه انگلیسی یا فارسی طولانی باشد و هیچ حرف صداداری نداشته باشد (مثل چرت و پرت‌های کیبورد)
+        if len(w) > 4:
+            vowels_fa = ['ا', 'آ', 'و', 'ی', 'ئ']
+            vowels_en = ['a', 'e', 'i', 'o', 'u']
+            has_vowel_fa = any(v in w for v in vowels_fa)
+            has_vowel_en = any(v in w for v in vowels_en)
+            if not has_vowel_fa and not has_vowel_en:
+                return jsonify({'status': 'success', 'results': []})
+        
+        # تکرار بیش از حد یک حرف پشت سر هم
+        if re.search(r'(.)\1{2,}', w):
+            return jsonify({'status': 'success', 'results': []})
+
+    # لیست کلمات نامعتبر دستی
     invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123', 'خر', 'اغشخ']
-    if any(p == q_lower or p in q_lower.split() for p in invalid_patterns):
-        return jsonify({'status': 'success', 'results': []})
-    
-    # ۳. تشخیص کاراکترها و حروف تصادفی بی‌معنی انگلیسی
-    if re.search(r'^[bcdfghjklmnpqrstvwxyz]{5,}$', q_lower) or (re.search(r'^[a-z]{8,}$', q_lower) and not any(v in q_lower for v in ['a', 'e', 'i', 'o', 'u'])):
+    if any(p == q_lower or p in words for p in invalid_patterns):
         return jsonify({'status': 'success', 'results': []})
 
     encoded_query = urllib.parse.quote(query)
