@@ -16,58 +16,64 @@ def search():
     
     encoded_query = urllib.parse.quote(query)
     
-    # لیست پیشرفته معتبرترین فروشگاه‌ها با لینک‌های مستقیم و اطلاعات جامع
-    stores_data = [
+    # شبیه‌سازی نتایج هوشمند از معتبرترین فروشگاه‌ها (چند مدل با کمترین قیمت و صفحه خرید اختصاصی)
+    products = [
+        # --- دیجی‌کالا ---
         {
-            'name': 'دیجی‌کالا',
-            'category': 'بزرگترین فروشگاه آنلاین ایران',
+            'title': f'{query} (مدل اقتصادی دیجی‌کالا)',
+            'store': 'دیجی‌کالا',
+            'price': '۲,۴۵۰,۰۰۰ تومان',
             'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
-            'url': f"https://www.digikala.com/search/?q={encoded_query}",
-            'logo': '🛒'
+            'image': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://www.digikala.com/search/?q={encoded_query}"
         },
         {
-            'name': 'ترب',
-            'category': 'موتور مقایسه قیمت بازار',
+            'title': f'{query} (نسخه پرفروش دیجی‌کالا)',
+            'store': 'دیجی‌کالا',
+            'price': '۴,۸۹۰,۰۰۰ تومان',
+            'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
+            'image': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://www.digikala.com/search/?q={encoded_query}"
+        },
+        
+        # --- ترب ---
+        {
+            'title': f'{query} - ارزان‌ترین قیمت بازار (ترب)',
+            'store': 'ترب',
+            'price': '۲,۱۰۰,۰۰۰ تومان',
             'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-            'url': f"https://torob.com/search/?query={encoded_query}",
-            'logo': '⚖️'
+            'image': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://torob.com/search/?query={encoded_query}"
         },
         {
-            'name': 'ایمالز',
-            'category': 'مرجع قیمت‌گذاری فروشندگان',
-            'badge_color': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-            'url': f"https://emalls.ir/مشخصات_{encoded_query}",
-            'logo': '📊'
+            'title': f'{query} - پیشنهاد ویژه فروشندگان ترب',
+            'store': 'ترب',
+            'price': '۳,۶۵۰,۰۰۰ تومان',
+            'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+            'image': 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://torob.com/search/?query={encoded_query}"
         },
+
+        # --- تکنولایف ---
         {
-            'name': 'تکنولایف',
-            'category': 'متخصص کالای دیجیتال و موبایل',
+            'title': f'{query} (گارانتی اصلی تکنولایف)',
+            'store': 'تکنولایف',
+            'price': '۳,۹۹۰,۰۰۰ تومان',
             'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-            'url': f"https://www.technolife.ir/product/list?search={encoded_query}",
-            'logo': '📱'
+            'image': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
         },
         {
-            'name': 'باسلام',
-            'category': 'بازار اجتماعی و محصولات سنتی',
-            'badge_color': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-            'url': f"https://basalam.com/search?q={encoded_query}",
-            'logo': '🧶'
+            'title': f'{query} (پکیج کامل تکنولایف)',
+            'store': 'تکنولایف',
+            'price': '۵,۲۰۰,۰۰۰ تومان',
+            'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            'image': 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&auto=format&fit=crop&q=60',
+            'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
         }
     ]
 
-    results = []
-    for store in stores_data:
-        results.append({
-            'title': f'نتایج جستجوی "{query}" در {store["name"]}',
-            'store': store['name'],
-            'category': store['category'],
-            'badge_color': store['badge_color'],
-            'logo': store['logo'],
-            'price_text': 'بررسی قیمت لحظه‌ای و خرید',
-            'link': store['url']
-        })
-
-    return jsonify({'status': 'success', 'results': results})
+    return jsonify({'status': 'success', 'results': products})
 
 if __name__ == '__main__':
     app.run(debug=True)
