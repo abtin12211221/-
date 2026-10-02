@@ -1,86 +1,100 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ارزون‌‌جو | موتور هوشمند جستجوی ارزان‌ترین کالا</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;900&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header>
-        <h1>ارزون‌جو 🚀</h1>
-        <p>موتور هوشمند و فوق‌پیشرفته مقایسه قیمت بازار</p>
-    </header>
+from flask import Flask, render_template, request, jsonify
+import requests
+from bs4 import BeautifulSoup
+import urllib.parse
 
-    <main class="container">
-        <div class="search-box">
-            <input type="text" id="queryInput" placeholder="محصول دلخواهت رو سرچ کن (مثلا گوشی سامسونگ)..." onkeypress="if(event.key === 'Enter') searchProducts()">
-            <button onclick="searchProducts()"><i class="fa-solid fa-magnifying-glass"></i> جستجو</button>
-        </div>
+app = Flask(__name__)
 
-        <div id="resultsContainer" class="products-grid">
-            <p class="guide-text">💡 لطفاً نام کالای مورد نظر خود را برای جستجو در دیجی‌کالا وارد کنید.</p>
-        </div>
-    </main>
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-    <script>
-        async function searchProducts() {
-            const query = document.getElementById('queryInput').value.trim();
-            const container = document.getElementById('resultsContainer');
-            
-            if (!query) {
-                alert('لطفاً عبارتی را برای جستجو وارد کنید.');
-                return;
-            }
+@app.route('/search', methods=['POST'])
+def search():
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'status': 'error', 'message': 'عبارت جستجو خالی است'})
 
-            container.innerHTML = '<p class="loading"><i class="fa-solid fa-spinner"></i> در حال کاوش و جستجوی هوشمند در بازار...</p>';
-
-            try {
-                const response = await fetch('/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ query: query })
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    container.innerHTML = '';
-                    if (data.results.length === 0) {
-                        container.innerHTML = '<p class="guide-text">محصولی با این مشخصات یافت نشد.</p>';
-                        return;
-                    }
-
-                    data.results.forEach(item => {
-                        const card = document.createElement('div');
-                        card.className = 'product-card';
-                        card.innerHTML = `
-                            <div class="product-img-wrapper">
-                                <img src="${item.image}" alt="${item.title}" class="product-img">
-                            </div>
-                            <h3>${item.title}</h3>
-                            <div class="product-info">
-                                <span class="store">${item.store}</span>
-                                <span class="price">${item.price}</span>
-                            </div>
-                            <a href="${item.link}" target="_blank" class="btn-buy">
-                                <i class="fa-solid fa-cart-shopping"></i> مشاهده و خرید
-                            </a>
-                        `;
-                        container.appendChild(card);
-                    });
-                } else {
-                    container.innerHTML = `<p class="guide-text">خطا: ${data.message}</p>`;
-                }
-            } catch (error) {
-                container.innerHTML = '<p class="guide-text">خطا در برقراری ارتباط با سرور.</p>';
-                console.error(error);
-            }
+    products = []
+    try:
+        encoded_query = urllib.parse.quote(query)
+        url = f"https://www.digikala.com/search/?q={encoded_query}"
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
         }
-    </script>
-</body>
-</html>
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            items = soup.select('article, div.product-card, div[data-product-id]')
+            
+            if not items:
+                items = soup.find_all('a', href=lambda href: href and '/product/dkp-' in href)
+
+            for item in items[:12]:
+                try:
+                    if item.name == 'a':
+                        link_elem = item
+                    else:
+                        link_elem = item.find('a', href=True)
+
+                    raw_link = link_elem['href'] if link_elem else ""
+                    if not raw_link or '/product/dkp-' not in raw_link:
+                        continue
+                        
+                    link = f"https://www.digikala.com{raw_link}" if raw_link.startswith('/') else raw_link
+
+                    title_elem = item.find('h3') or item.find('h4') or item.select_one('div[data-testid="title"]')
+                    title = title_elem.get_text(strip=True) if title_elem else f"محصول مرتبط با {query}"
+
+                    img_elem = item.find('img')
+                    image = img_elem.get('src') or img_elem.get('data-src') if img_elem else "https://via.placeholder.com/200"
+
+                    price_elem = item.select_one('span[data-testid="price"]') or item.find(string=lambda t: t and 'تومان' in t)
+                    price = price_elem.get_text(strip=True) if hasattr(price_elem, 'get_text') else "مشاهده قیمت در سایت"
+
+                    if not any(p['link'] == link for p in products):
+                        products.append({
+                            'title': title,
+                            'store': 'دیجی‌کالا',
+                            'price': price,
+                            'image': image,
+                            'link': link
+                        })
+                except Exception:
+                    continue
+
+        # اگر به هر دلیلی اسکرپر محصولی پیدا نکرد، برای جلوگیری از ارور، صفحه جستجوی مستقیم دیجی‌کالا رو برمی‌گردونه
+        if not products:
+            products.append({
+                'title': f'نتایج جستجوی "{query}" در دیجی‌کالا',
+                'store': 'دیجی‌کالا',
+                'price': 'کلیک کنید',
+                'image': 'https://via.placeholder.com/200',
+                'link': url
+            })
+
+        return jsonify({'status': 'success', 'results': products})
+    
+    except Exception as e:
+        # حتی در صورت بروز خطای سرور هم لینک مستقیم رو به کاربر میدیم تا کارش راه بیفته
+        fallback_url = f"https://www.digikala.com/search/?q={urllib.parse.quote(query)}"
+        return jsonify({
+            'status': 'success', 
+            'results': [{
+                'title': f'مشاهده نتایج جستجوی "{query}" در دیجی‌کالا',
+                'store': 'دیجی‌کالا',
+                'price': 'مشاهده',
+                'image': 'https://via.placeholder.com/200',
+                'link': fallback_url
+            }]
+        })
+
+if __name__ == '__main__':
+    app.run(debug=True)
