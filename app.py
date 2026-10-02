@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 import urllib.parse
-import random
 
 app = Flask(__name__)
 
@@ -12,11 +11,17 @@ def home():
 def search():
     data = request.get_json()
     query = data.get('query', '').strip()
-    if not query:
-        return jsonify({'status': 'error', 'message': 'عبارت جستجو خالی است'})
+    if not query or len(query) < 2:
+        return jsonify({'status': 'error', 'message': 'عبارت جستجو نامعتبر است'})
     
-    encoded_query = urllib.parse.quote(query)
     q_lower = query.lower()
+    
+    # لیست کلمات نامعتبر یا چرت و پرت که نباید برایشان نتیجه‌ای برگردانده شود
+    invalid_keywords = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123']
+    if q_lower in invalid_keywords or all(not c.isalnum() for c in query):
+        return jsonify({'status': 'success', 'results': []})
+
+    encoded_query = urllib.parse.quote(query)
     
     # تعیین عکس‌ها و بازه قیمت منطقی بر اساس نوع کالا
     if any(k in q_lower for k in ['لپ‌تاپ', 'لپتاپ', 'laptop', 'asus', 'acer', 'macbook', 'lenovo']):
