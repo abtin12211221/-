@@ -1,3 +1,13 @@
+from flask import Flask, render_template, request, jsonify
+import requests
+from bs4 import BeautifulSoup
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 @app.route('/search', methods=['POST'])
 def search():
     data = request.get_json()
@@ -18,16 +28,14 @@ def search():
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # جستجوی عمومی‌تر برای کارت‌های محصولات در دیجی‌کالا
+            # جستجوی هوشمند کارت‌های محصولات در دیجی‌کالا
             items = soup.select('article, div.product-card, div[data-product-id]')
             
             if not items:
-                # اگر با سلکتورهای بالا پیدا نکرد، تمام تگ‌های لینک که ساختار محصول دارند را پیدا کن
                 items = soup.find_all('a', href=lambda href: href and '/product/dkp-' in href)
 
             for item in items[:12]:
                 try:
-                    # اگر الگو لینک مستقیم بود
                     if item.name == 'a':
                         link_elem = item
                     else:
@@ -39,21 +47,25 @@ def search():
                         
                     link = f"https://www.digikala.com{raw_link}" if raw_link.startswith('/') else raw_link
 
-                    # استخراج عنوان
-                    title_elem = item.find('h3') or item.find('h4') or item.select_text = item.select_one('div[data-testid="title"]')
+                    # استخراج عنوان با ایمنی کامل
+                    title_elem = item.find('h3') or item.find('h4') or item.select_one('div[data-testid="title"]')
                     title = title_elem.get_text(strip=True) if title_elem else "محصول دیجی‌کالا"
 
-                    # استخراج عکس
+                    # استخراج تصویر
                     img_elem = item.find('img')
                     image = img_elem.get('src') or img_elem.get('data-src') if img_elem else "https://via.placeholder.com/200"
 
                     # استخراج قیمت
                     price_elem = item.select_one('span[data-testid="price"]') or item.find(string=lambda t: t and 'تومان' in t)
-                    price = price_elem.get_text(strip=True) if price_elem else "موجود در سایت"
-                    if hasattr(price_elem, 'parent') and not price_elem.parent.name == 'span':
-                        price = price_elem.strip()
+                    if price_elem:
+                        if hasattr(price_elem, 'get_text'):
+                            price = price_elem.get_text(strip=True)
+                        else:
+                            price = str(price_elem).strip()
+                    else:
+                        price = "موجود در سایت"
 
-                    # جلوگیری از تکراری شدن محصولات در لیست
+                    # جلوگیری از محصولات تکراری
                     if not any(p['link'] == link for p in products):
                         products.append({
                             'title': title,
@@ -62,10 +74,13 @@ def search():
                             'image': image,
                             'link': link
                         })
-                except Exception as e:
+                except Exception:
                     continue
 
         return jsonify({'status': 'success', 'results': products})
     
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
+
+if __name__ == '__main__':
+    app.run(debug=True)
