@@ -1,127 +1,93 @@
-from flask import Flask, render_template, request, jsonify
-import urllib.parse
-import re
+import os
+import sqlite3
+from flask import Flask, render_template_string, request, send_from_directory
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# پوشه تصاویر
+IMAGE_FOLDER = "arzoonjou_images"
+os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
-@app.route('/search', methods=['POST'])
-def search():
-    data = request.get_json()
-    query = data.get('query', '').strip()
-    if not query or len(query) < 2:
-        return jsonify({'status': 'error', 'message': 'عبارت جستجو نامعتبر است'})
-    
-    q_lower = query.lower()
-    
-    # ۱. لیست جامع کلمات رکیک و ناسزا
-    bad_words = [
-        'مادرجنده', 'مادر جنده', 'جنده', 'کیر', 'کونی', 'کون', 'پاره', 'لاشی', 
-        'كس', 'کص', 'کصکش', 'کسکش', 'کس', 'کص', 'جندع', 'کصده', 'کسده', 'لاشخور',
-        'حرومزاده', 'حرامزاده', 'پدرسگ', 'پدرصگ', 'سگ‌پدر', 'بی‌ناموس', 'بی ناموس'
-    ]
-    
-    q_clean_all = q_lower.replace(' ', '').replace('‌', '').replace('_', '').replace('-', '')
-    for bw in bad_words:
-        bw_clean = bw.replace(' ', '').replace('‌', '')
-        if bw_clean in q_clean_all or bw in q_lower:
-            return jsonify({'status': 'success', 'results': []})
+# قالب HTML زیبا با ظاهر نارنجی و مدرن
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ارزون‌جو | تخفیف‌های ناب افیلیت</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- هدر سایت -->
+    <header class="bg-orange-500 text-white shadow-md py-4 px-6 mb-8">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold tracking-wide">🔥 ارزون‌جو (تخفیف‌های ویژه)</h1>
+            <form method="GET" action="/" class="flex w-full md:w-1/3">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="جستجوی محصول..." class="w-full px-4 py-2 rounded-r-lg text-slate-800 bg-white focus:outline-none">
+                <button type="submit" class="bg-slate-900 px-5 py-2 rounded-l-lg hover:bg-slate-800 transition">بگرد</button>
+            </form>
+        </div>
+    </header>
 
-    words = q_lower.split()
-    for w in words:
-        w_clean = w.replace('‌', '').strip()
-        if w_clean in bad_words:
-            return jsonify({'status': 'success', 'results': []})
-            
-        consonants = re.findall(r'[بقجحخدذرزژسشصضطظعغفقکگلمنوهی]', w)
-        vowels = re.findall(r'[آأإؤئءاوي]', w)
-        if len(w) >= 5 and (len(consonants) / len(w) > 0.85 or len(w) > 6 and len(vowels) == 0):
-            return jsonify({'status': 'success', 'results': []})
-            
-        if re.search(r'(.)\1{2,}', w):
-            return jsonify({'status': 'success', 'results': []})
+    <!-- محتوای اصلی -->
+    <main class="container mx-auto px-4 pb-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden border border-slate-100 flex flex-col justify-between">
+                <div>
+                    {% if product[3] %}
+                    <img src="/{{ product[3] }}" alt="{{ product[1] }}" class="w-full h-48 object-cover">
+                    {% else %}
+                    <div class="w-full h-48 bg-slate-200 flex items-center justify-center text-slate-400">بدون تصویر</div>
+                    {% endif %}
+                    <div class="p-4">
+                        <h2 class="font-bold text-slate-800 text-sm line-clamp-2 mb-2">{{ product[1] }}</h2>
+                        <p class="text-orange-600 font-bold text-base mb-4">{{ product[2] }}</p>
+                    </div>
+                </div>
+                <div class="p-4 pt-0">
+                    <a href="{{ product[4] }}" target="_blank" class="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-bold transition">خرید مستقیم</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full text-center py-16 text-slate-400">
+                <p class="text-lg">محصولی یافت نشد. لطفاً اسکرپر را اجرا کنید.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
+"""
 
-    invalid_patterns = ['asdf', 'test', 'qqq', '111', 'xyz', 'هیچی', 'تست', '1234', '123']
-    if any(p == q_lower or p in words for p in invalid_patterns):
-        return jsonify({'status': 'success', 'results': []})
+def get_db():
+    conn = sqlite3.connect("arzoonjou.db")
+    return conn
 
-    encoded_query = urllib.parse.quote(query)
+@app.route("/")
+def index():
+    query = request.args.get("q", "").strip()
+    conn = get_db()
+    cursor = conn.cursor()
     
-    # ۲. تمام دسته‌بندی‌های بازار به همراه تصاویر و قیمت‌های واقعی
-    if any(k in q_lower for k in ['باربی', 'عروسک', 'اسباب بازی', 'اسباب‌بازی', 'لگو', 'lego', 'تفنگ', 'ماشین کنترلی']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۴۵۰,۰۰۰ تا ۹۵۰,۰۰۰ تومان', 'از ۶۰۰,۰۰۰ تا ۱,۲۰۰,۰۰۰ تومان', 'از ۳۵۰,۰۰۰ تا ۷۵۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['لپ‌تاپ', 'لپتاپ', 'laptop', 'asus', 'acer', 'macbook', 'lenovo', 'hp', 'مکبوک']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۳۵,۰۰۰,۰۰۰ تا ۴۲,۰۰۰,۰۰۰ تومان', 'از ۳۸,۰۰۰,۰۰۰ تا ۴۶,۰۰۰,۰۰۰ تومان', 'از ۳۲,۰۰۰,۰۰۰ تا ۳۹,۰۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['گوشی', 'موبایل', 'سامسونگ', 'آیفون', 'phone', 'apple', 'xiaomi', 'شیائومی', 'پوکو', 'گلکسی']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۲۲,۰۰۰,۰۰۰ تا ۲۸,۰۰۰,۰۰۰ تومان', 'از ۲۵,۰۰۰,۰۰۰ تا ۳۱,۰۰۰,۰۰۰ تومان', 'از ۲۰,۰۰۰,۰۰۰ تا ۲۶,۰۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['کنسول', 'پلی استیشن', 'playstation', 'ps5', 'ps4', 'ایکس باکس', 'xbox', 'دسته بازی', 'پی اس فایو', 'سونی ۵']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۱۹,۰۰۰,۰۰۰ تا ۲۲,۰۰۰,۰۰۰ تومان', 'از ۲۰,۰۰۰,۰۰۰ تا ۲۳,۵۰۰,۰۰۰ تومان', 'از ۱۸,۵۰۰,۰۰۰ تا ۲۱,۰۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['کفش', 'کتونی', 'لباس', 'پیراهن', 'شلوار', 'پوشاک', 'هودی', 'کاپشن', 'تیشرت']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۹۰۰,۰۰۰ تا ۱,۴۰۰,۰۰۰ تومان', 'از ۱,۲۰۰,۰۰۰ تا ۱,۹۰۰,۰۰۰ تومان', 'از ۷۵۰,۰۰۰ تا ۱,۱۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['یخچال', 'فریزر', 'تلویزیون', 'ماشین لباسشویی', 'ظرفشویی', 'جاروبرقی', 'آشپزخانه']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1571175336575-f5f543f27c7a?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۲۵,۰۰۰,۰۰۰ تا ۴۵,۰۰۰,۰۰۰ تومان', 'از ۳۰,۰۰۰,۰۰۰ تا ۵۵,۰۰۰,۰۰۰ تومان', 'از ۲۰,۰۰۰,۰۰۰ تا ۳۸,۰۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['ساعت', 'ساعت هوشمند', 'اسمارت واچ', 'smartwatch', 'هدفون', 'هندزفری', 'پاوربانک', 'شارژر']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۱,۵۰۰,۰۰۰ تا ۴,۰۰۰,۰۰۰ تومان', 'از ۲,۰۰۰,۰۰۰ تا ۵,۵۰۰,۰۰۰ تومان', 'از ۹۰۰,۰۰۰ تا ۲,۵۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['عطر', 'ادکلن', 'لوازم آرایشی', 'ریمل', 'کرم', 'رژلب', 'پوست', 'مو', 'شامپو']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۶۰۰,۰۰۰ تا ۲,۲۰۰,۰۰۰ تومان', 'از ۸۰۰,۰۰۰ تا ۳,۰۰۰,۰۰۰ تومان', 'از ۴۰۰,۰۰۰ تا ۱,۵۰۰,۰۰۰ تومان'
-        
-    elif any(k in q_lower for k in ['کتاب', 'رمان', 'دفتر', 'خودکار', 'لوازم تحریر', 'مداد']):
-        img1, img2, img3 = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&auto=format&fit=crop&q=80'
-        p1, p2, p3 = 'از ۱۰۰,۰۰۰ تا ۳۵۰,۰۰۰ تومان', 'از ۱۵۰,۰۰۰ تا ۵۰۰,۰۰۰ تومان', 'از ۸۰,۰۰۰ تا ۲۵۰,۰۰۰ تومان'
-        
+    if query:
+        cursor.execute("SELECT id, title, price, image_path, affiliate_link FROM products WHERE title LIKE ?", (f"%{query}%",))
     else:
-        # حالت هوشمند برای هر محصول دیگه‌ای که جزو دسته‌های بالا نباشد
-        img1 = f"https://picsum.photos/seed/{encoded_query}1/500/500"
-        img2 = f"https://picsum.photos/seed/{encoded_query}2/500/500"
-        img3 = f"https://picsum.photos/seed/{encoded_query}3/500/500"
-        p1, p2, p3 = 'از ۷,۰۰۰,۰۰۰ تا ۹,۵۰۰,۰۰۰ تومان', 'از ۸,۲۰۰,۰۰۰ تا ۱۰,۸۰۰,۰۰۰ تومان', 'از ۶,۵۰۰,۰۰۰ تا ۸,۸۰۰,۰۰۰ تومان'
+        cursor.execute("SELECT id, title, price, image_path, affiliate_link FROM products")
+        
+    products = cursor.fetchall()
+    conn.close()
+    return render_template_string(HTML_TEMPLATE, products=products, search_query=query)
 
-    products = [
-        {
-            'title': f'خرید و مقایسه قیمت {query} در فروشگاه‌های معتبر',
-            'store': 'ترب',
-            'price': p1,
-            'badge_color': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-            'image': img1,
-            'link': f"https://torob.com/search/?query={encoded_query}"
-        },
-        {
-            'title': f'بررسی مشخصات و موجودی {query}',
-            'store': 'دیجی‌کالا',
-            'price': p2,
-            'badge_color': 'bg-red-500/10 text-red-400 border-red-500/20',
-            'image': img2,
-            'link': f"https://www.digikala.com/search/?q={encoded_query}"
-        },
-        {
-            'title': f'خرید آنلاین {query} با گارانتی اصلی',
-            'store': 'تکنولایف',
-            'price': p3,
-            'badge_color': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-            'image': img3,
-            'link': f"https://www.technolife.ir/product/list?search={encoded_query}"
-        }
-    ]
+@app.route(f"/{IMAGE_FOLDER}/<path:filename>")
+def downloaded_image(filename):
+    return send_from_directory(IMAGE_FOLDER, filename)
 
-    return jsonify({'status': 'success', 'results': products})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
+    
